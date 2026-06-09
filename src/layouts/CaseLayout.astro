@@ -1,0 +1,98 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ScrollProgress from '../components/ScrollProgress.astro';
+import { byRank, getProject } from '../data/projects';
+
+interface Props {
+  slug: string;
+  /** Source files this case study traces to (shown in the footer). */
+  sources: string[];
+  description?: string;
+}
+const { slug, sources, description } = Astro.props;
+const project = getProject(slug);
+const rank = String(project.rank).padStart(2, '0');
+const order = byRank;
+const idx = order.findIndex((p) => p.slug === slug);
+const next = order[(idx + 1) % order.length];
+---
+
+<BaseLayout title={project.title} description={description}>
+  <ScrollProgress />
+  <article class="case">
+    <div class="container case__col">
+      <a class="case__back" href="/#work">← All work</a>
+
+      <header class="case__header reveal">
+        <div class="case__meta">
+          <span class="case__rank mono">{rank}{project.rank === 1 ? ' · Flagship' : ''}</span>
+          {project.tags.map((t) => <span class="tag mono">{t}</span>)}
+        </div>
+        <h1 class="case__title">{project.title}</h1>
+        <p class="case__subtitle">{project.subtitle}</p>
+      </header>
+
+      <slot />
+
+      <footer class="case__footer">
+        <div class="case__sources">
+          <span class="eyebrow">Traces to</span>
+          <ul>
+            {sources.map((s) => <li class="mono">{s}</li>)}
+          </ul>
+          <p class="case__sources-note">
+            Every figure on this page is rebuilt natively from these files, and nothing
+            is lifted from a slide deck's visuals.
+          </p>
+        </div>
+        <a class="case__next" href={`/work/${next.slug}`}>
+          <span class="eyebrow">Next</span>
+          <span class="case__next-title">{next.title} →</span>
+        </a>
+      </footer>
+    </div>
+  </article>
+</BaseLayout>
+
+<style is:global>
+  .case__col { max-width: 54rem; }
+  .case__back {
+    display: inline-block; margin-top: var(--space-6); margin-bottom: var(--space-6);
+    font-size: var(--step--1); color: var(--muted); text-decoration: none;
+  }
+  .case__back:hover { color: var(--cobalt-ink); }
+
+  .case__header { border-bottom: 1px solid var(--line); padding-bottom: var(--space-6); }
+  .case__meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: var(--space-4); }
+  .case__rank { font-size: var(--step--2); color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
+  .case__title { font-size: var(--step-5); letter-spacing: -0.035em; }
+  .case__subtitle { margin-top: var(--space-4); font-size: var(--step-2); color: var(--cobalt-ink); max-width: 34ch; letter-spacing: -0.01em; }
+
+  /* Case-body building blocks (global so slotted content is styled) */
+  .case-section { padding-top: var(--space-8); }
+  .case-section > .eyebrow { display: block; margin-bottom: var(--space-3); }
+  .case-section h2 { font-size: var(--step-3); letter-spacing: -0.02em; max-width: 26ch; }
+  .case-section h3 { margin-top: var(--space-6); font-size: var(--step-1); }
+  .case p, .case li { font-size: var(--step-0); color: var(--ink); line-height: 1.62; }
+  .case p + p { margin-top: var(--space-4); }
+  .case .lede { font-size: var(--step-1); color: var(--ink-strong); line-height: 1.5; max-width: 52ch; }
+
+  .case .fig { margin-top: var(--space-6); }
+  .case figure + figure { margin-top: var(--space-5); }
+
+  .prose-list { margin-top: var(--space-4); padding-left: 1.1rem; display: grid; gap: 0.5rem; }
+  .prose-list li { padding-left: 0.3rem; }
+
+  .case__footer {
+    margin-top: var(--space-9); padding-top: var(--space-7);
+    border-top: 1px solid var(--line);
+    display: grid; gap: var(--space-6);
+  }
+  @media (min-width: 44rem) { .case__footer { grid-template-columns: 1.4fr 1fr; align-items: start; } }
+  .case__sources ul { list-style: none; padding: 0; margin: 0.6rem 0 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .case__sources li { font-size: var(--step--2); color: var(--cobalt-ink); background: var(--cobalt-soft); padding: 0.15rem 0.5rem; border-radius: 3px; }
+  .case__sources-note { margin-top: var(--space-4); font-size: var(--step--1); color: var(--muted); max-width: 46ch; }
+  .case__next { text-decoration: none; display: grid; gap: 0.3rem; justify-items: start; align-content: start; }
+  .case__next-title { font-size: var(--step-2); color: var(--ink-strong); letter-spacing: -0.01em; transition: transform 0.15s var(--ease), color 0.15s var(--ease); display: inline-block; }
+  .case__next:hover .case__next-title { color: var(--cobalt-ink); transform: translateX(3px); }
+</style>

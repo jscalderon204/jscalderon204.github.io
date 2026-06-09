@@ -1,0 +1,96 @@
+---
+import { site, nav } from '../data/site';
+const path = Astro.url.pathname;
+---
+
+<header class="nav">
+  <div class="container nav__inner">
+    <a href="/" class="nav__brand" aria-label={`${site.name}, home`}>
+      <span class="nav__name">{site.name}</span>
+      <span class="nav__role mono">{site.role}</span>
+    </a>
+    <nav aria-label="Primary">
+      <ul class="nav__links">
+        {
+          nav.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                aria-current={item.href === path ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+        {
+          site.resumePdf && (
+            <li>
+              <a href={site.resumePdf} class="nav__resume">
+                Résumé
+              </a>
+            </li>
+          )
+        }
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in oklab, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(1.4) blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 4rem;
+  }
+  .nav__brand {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    color: var(--ink-strong);
+    text-decoration: none;
+  }
+  .nav__name { font-weight: 650; letter-spacing: -0.02em; }
+  .nav__role {
+    font-size: var(--step--2);
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  @media (max-width: 32rem) {
+    .nav__role { display: none; }
+  }
+  .nav__links {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.9rem, 0.4rem + 2vw, 1.9rem);
+    list-style: none;
+    padding: 0;
+    font-size: var(--step--1);
+  }
+  .nav__links a {
+    color: var(--ink);
+    text-decoration: none;
+    padding-block: 0.4rem;
+  }
+  .nav__links a:hover { color: var(--cobalt-ink); }
+  .nav__links a[aria-current='page'] {
+    color: var(--cobalt-ink);
+    box-shadow: inset 0 -2px 0 var(--cobalt);
+  }
+  .nav__resume {
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    padding: 0.4rem 0.8rem !important;
+  }
+  .nav__resume:hover { border-color: var(--cobalt); }
+</style>

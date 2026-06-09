@@ -1,0 +1,202 @@
+---
+import CaseLayout from '../../layouts/CaseLayout.astro';
+import Figure from '../../components/Figure.astro';
+import Callout from '../../components/Callout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import DataTable from '../../components/DataTable.astro';
+import HBar from '../../components/charts/HBar.astro';
+import BudgetSweep from '../../components/charts/BudgetSweep.astro';
+import PromptProgression from '../../components/charts/PromptProgression.astro';
+import {
+  headline, setup, budgetSweep, promptProgression, forcedSkew,
+  levers, droppedSft, limitations, nextSteps, codeExcerpt, codeSource,
+} from '../../data/qwen';
+---
+
+<CaseLayout
+  slug="qwen-4b"
+  sources={['project_brief.md', 'old_qwen-4b_slide_deck.pdf', 'qwen-4b-inference.py', 'qwen-4b_kaggle_overview.md']}
+  description="Pushing a fixed Qwen3-4B-Thinking model from 0.388 to 0.724 on a math-reasoning leaderboard with prompting and decoding alone, and no training, on a single 12 GB GPU."
+>
+  <Callout variant="tldr" label="TL;DR">
+    The task fixed almost everything: a mandated <strong>Qwen3-4B-Thinking</strong>
+    model, a single 12&nbsp;GB GPU, a strict exact-match grader, and no training
+    allowed. So I treated inference itself as the problem to optimize. By budgeting
+    the model's thinking, aligning the prompt to the grader, and tuning the decoding,
+    the leaderboard score went from a <strong>0.388 baseline to 0.724</strong>, and
+    every gain came from those inference-time levers rather than a bigger model.
+  </Callout>
+
+  <Figure title="Leaderboard score: baseline → best" source="deck" scale="0–1 · 943 private q"
+    caption="Best of two runs. The jump comes entirely from prompting and decoding; the weights never changed.">
+    <HBar
+      ariaLabel="Leaderboard score rose from a 0.388 baseline to 0.724, a gain of 0.336 with zero training."
+      decimals={3}
+      max={0.8}
+      data={[
+        { label: 'Baseline', value: headline.baseline, role: 'baseline' },
+        { label: 'Best run', value: headline.best, role: 'measured', note: `+${headline.delta}` },
+      ]}
+    />
+    <DataTable slot="table" caption="Leaderboard score, baseline versus best run."
+      columns={['Run', 'Leaderboard score']} numCols={[1]}
+      rows={[['Baseline', headline.baseline.toFixed(3)], ['Best run', headline.best.toFixed(3)]]} />
+  </Figure>
+
+  <section class="case-section">
+    <span class="eyebrow">The problem</span>
+    <h2>Getting everything out of a model I could not retrain.</h2>
+    <p class="lede">
+      The task fixed almost everything: the model ({setup.model}), the hardware
+      ({setup.gpu}), and a grader that accepts an answer only on an exact string
+      match. The only free variables were how the model thinks and how it decodes.
+    </p>
+    <p>
+      That reframes the whole project as an <strong>inference-time optimization</strong>.
+      The goal was not to train something better, but to get every last point out of
+      weights I was not allowed to touch. The dataset spans high-school to graduate
+      math, with {setup.publicQ.toLocaleString()} public questions for development and
+      {' '}{setup.privateQ} private questions for the graded leaderboard, in a mix of
+      free-form (exact value) and multiple-choice. There were no external data, tools,
+      or calculators; all weights came from HuggingFace, served with {setup.serving}.
+    </p>
+  </section>
+
+  <Callout variant="finding" label="Read the axes carefully: two different scales">
+    Results live on <strong>two scales that are never comparable</strong>, and they
+    never share an axis on this page.
+    <br /><br />
+    <strong>Dev accuracy (%)</strong> is the percent correct on the {setup.devQ}-question
+    public dev set, a fast probe. <strong>Leaderboard score (0–1)</strong> is the
+    official graded score over all {setup.privateQ} private questions. The headline
+    <strong>0.724 is a leaderboard score.</strong>
+  </Callout>
+
+  <section class="case-section">
+    <span class="eyebrow">The approach · four levers</span>
+    <h2>Four levers, one decisive.</h2>
+    <div class="levers">
+      {
+        levers.map((l) => (
+          <div class:list={['lever', { 'lever--decisive': l.decisive }]}>
+            <div class="lever__head">
+              <span class="lever__n mono">{String(l.n).padStart(2, '0')}</span>
+              {l.decisive && <span class="lever__badge mono">decisive</span>}
+            </div>
+            <h3 class="lever__title">{l.title}</h3>
+            <p class="lever__body">{l.body}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="case-section">
+    <span class="eyebrow">Results · Experiment 1</span>
+    <h2>How much thinking is too much?</h2>
+    <p>
+      Sweeping the thinking-token budget showed a clear optimum: with too little, the
+      model cannot finish reasoning, and with too much, it wanders past the answer and
+      gets truncated. <strong>12,288 max-tokens with a 9,000-token budget</strong> was the peak.
+    </p>
+    <Figure title="Thinking-budget sweep" source={budgetSweep.source} scale={budgetSweep.scale}
+      caption="Dev accuracy against the token budget. The optimum sits in the middle, since more thinking is not better.">
+      <BudgetSweep />
+      <DataTable slot="table" caption="Dev accuracy by thinking budget."
+        columns={['max-tokens / budget', 'Dev accuracy']} numCols={[1]}
+        rows={budgetSweep.points.map((p) => [p.label, p.devAcc + '%'])} />
+    </Figure>
+
+    <span class="eyebrow" style="display:block; margin-top: var(--space-7);">Results · Experiment 2</span>
+    <h2>The prompt was the lever that mattered.</h2>
+    <p>
+      Rewriting the system prompt to speak the grader's language, with plain ASCII, at
+      least 12 significant figures, and brackets preserved, moved the leaderboard score
+      more than anything else. Light sampling on top of it compounded the gain.
+    </p>
+    <Figure title="Prompt engineering progression" source={promptProgression.source} scale={promptProgression.scale}
+      caption="Greedy versus temperature 0.6, across two prompt generations. Gains are small but real and stack.">
+      <PromptProgression />
+      <DataTable slot="table" caption="Leaderboard score by prompt and decoding."
+        columns={['Prompt', 'Greedy', 'Temp 0.6']} numCols={[1, 2]}
+        rows={promptProgression.series.map((s) => [s.prompt, s.greedy.toFixed(3), s.temp06.toFixed(3)])} />
+    </Figure>
+  </section>
+
+  <section class="case-section">
+    <span class="eyebrow">The key finding</span>
+    <h2>Most misses were formatting, not reasoning.</h2>
+    <p>
+      When questions were forced to answer at the budget cap, the error pattern was
+      lopsided: multiple-choice answers held up, but free-form answers collapsed, not
+      because the math was wrong, but because the output did not match the grader's
+      exact format.
+    </p>
+    <Figure title="Forced-to-answer correctness" source={forcedSkew.source} scale={forcedSkew.scale}
+      caption="Multiple-choice versus free-form, when forced to answer. The gap is a formatting gap, not a reasoning gap.">
+      <HBar
+        ariaLabel="When forced to answer, multiple-choice was 81% correct versus 30% for free-form."
+        suffix="%"
+        max={100}
+        data={[
+          { label: 'Multiple-choice', value: forcedSkew.rows[0].correctPct, role: 'measured' },
+          { label: 'Free-form', value: forcedSkew.rows[1].correctPct, role: 'human' },
+        ]}
+      />
+      <DataTable slot="table" caption="Correctness when forced to answer, by question type."
+        columns={['Question type', 'Correct']} numCols={[1]}
+        rows={forcedSkew.rows.map((r) => [r.kind, r.correctPct + '%'])} />
+    </Figure>
+    <Callout variant="finding" label="Why this mattered">
+      <strong>~80% of free-form misses were formatting or truncation, not bad math.</strong>
+      So the effort went where the points were, into format discipline and budget,
+      rather than toward a bigger model it was not allowed to use.
+    </Callout>
+  </section>
+
+  <section class="case-section">
+    <span class="eyebrow">The engineering</span>
+    <h2>The winning configuration, verbatim.</h2>
+    <p>
+      The two-phase decoder is the heart of it: think up to the budget, and if the
+      model has not closed <code>&lt;/think&gt;</code> on its own, inject a forced
+      close and spend the remaining tokens stating a boxed answer.
+    </p>
+    <CodeBlock code={codeExcerpt} filename={codeSource} lang="python" />
+  </section>
+
+  <section class="case-section">
+    <span class="eyebrow">Honest limitations</span>
+    <h2>What this is not.</h2>
+    <Callout variant="caution" label="A path tried and dropped">
+      Supervised fine-tuning <strong>was attempted and abandoned</strong>: it
+      collapsed dev accuracy from <strong>{droppedSft.before}% to {droppedSft.after}%</strong>.
+      The model was kept intact, and knowing when to stop was part of the result.
+    </Callout>
+    <ul class="prose-list">
+      {limitations.map((l) => <li>{l}</li>)}
+    </ul>
+    <h3>Where it goes next</h3>
+    <ul class="prose-list">
+      {nextSteps.map((s) => <li>{s}</li>)}
+    </ul>
+  </section>
+</CaseLayout>
+
+<style>
+  .levers { display: grid; gap: var(--space-4); margin-top: var(--space-5); }
+  @media (min-width: 40rem) { .levers { grid-template-columns: 1fr 1fr; } }
+  .lever {
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: var(--space-5); background: var(--bg);
+  }
+  .lever--decisive { border-color: var(--cobalt-line); background: color-mix(in oklab, var(--cobalt-soft) 30%, var(--bg)); }
+  .lever__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+  .lever__n { font-size: var(--step--1); color: var(--muted); }
+  .lever__badge {
+    font-size: var(--step--2); color: var(--cobalt-ink); background: var(--cobalt-soft);
+    padding: 0.1rem 0.45rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .lever__title { margin: 0; font-size: var(--step-1); letter-spacing: -0.01em; }
+  .lever__body { margin-top: 0.5rem; font-size: var(--step--1); color: var(--ink); line-height: 1.55; }
+</style>

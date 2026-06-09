@@ -1,0 +1,42 @@
+---
+/* Provenance microtype, the site's signature. Every measured figure traces
+   to a real file in the repo. This is both the credibility move and the
+   anti-slop fingerprint. */
+interface Props {
+  source: string;        // e.g. "metrics.json", "deck · Exp 2", "history.json"
+  label?: string;        // override the leading word (default "source")
+}
+const { source, label = 'source' } = Astro.props;
+---
+
+<span class="src mono">
+  <svg class="src__mark" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+    <path d="M2 5.2 4.2 7.4 8 2.6" fill="none" stroke="currentColor" stroke-width="1.4"
+      stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+  <span class="src__k">{label}</span>
+  <span class="src__v">{source}</span>
+</span>
+
+<style>
+  .src {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--step--2);
+    color: var(--cobalt-ink);
+    letter-spacing: 0.01em;
+  }
+  .src__mark { color: var(--cobalt); flex: none; }
+  .src__k {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .src__v {
+    color: var(--cobalt-ink);
+    padding: 0.05rem 0.35rem;
+    background: var(--cobalt-soft);
+    border-radius: 3px;
+  }
+</style>

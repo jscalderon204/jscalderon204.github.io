@@ -1,0 +1,233 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../data/site';
+import SourceTag from '../components/SourceTag.astro';
+
+const experience = [
+  {
+    org: 'General Atomics',
+    role: 'Project Engineer Intern',
+    when: 'Current · Poway, CA',
+    body: 'Engineering internship at one of San Diego’s flagship defense & energy firms.',
+    now: true,
+  },
+  {
+    org: 'Sierra College',
+    role: 'Instructional Assistant',
+    when: '2024–2025',
+    body: 'Lectured Multivariable Calculus & Linear Algebra to 60+ students per section, wrote every exam, quiz, and assignment across three semesters, and held an 85–89% class average across 300+ students.',
+  },
+  {
+    org: 'Dell Technologies',
+    role: 'Data Analyst Intern',
+    when: 'Jul–Sep 2024',
+    body: 'Analyzed software sales & licensing data to surface growth patterns; built Python & SQL visualizations of quarterly trends; ran weekly client meetings for the software sales team.',
+  },
+  {
+    org: 'Sierra College',
+    role: 'Physics & Math Tutor',
+    when: '2023–2024',
+    body: 'Tutored across 16 sections (physics, the calculus series, linear algebra, discrete math) and led a team of 14 tutors supporting 700+ students.',
+  },
+];
+
+const education = [
+  { school: 'UC San Diego', detail: 'B.S. Data Science · Probability & Statistics minor', when: '2024–2027 (in progress) · GPA 3.50' },
+  { school: 'Sierra College', detail: 'Four associate degrees in Computer Science, Physics, Mathematics, and Natural Science', when: '2022–2024 · GPA 3.8–4.0' },
+];
+
+const toolkit = ['Python', 'Java', 'R', 'SQL', 'PyTorch', 'scikit-learn', 'transformers', 'statsmodels', 'torchvision', 'vLLM', 'D3.js'];
+const coursework = ['Probabilistic Modeling & ML', 'Mathematical Statistics', 'Representation Learning', 'Deep Learning'];
+---
+
+<BaseLayout title="About" description="Joseph Calderon is a data scientist in San Diego. He has taught about 1,000 students, holds a 3.50 GPA at UC San Diego, and has a habit of doing more with less.">
+  <section class="container about__col">
+    <a class="about__back" href="/">← Home</a>
+
+    <header class="about__header">
+      <div class="about__intro reveal" style="--i:0">
+        <p class="eyebrow">About</p>
+        <h1>Curiosity, applied to constraints.</h1>
+        <p class="about__lede">
+          I am Joseph: 21, from Sacramento, and based in San Diego. I study data science
+          at UC San Diego, and I am drawn to problems where the limits are the
+          interesting part, whether that is a model I cannot retrain, a network that has
+          to stay tiny, or a chart that has to stay smooth. Outside of that, I am usually
+          on a mountain bike or making music.
+        </p>
+      </div>
+      <div class="about__photo reveal" style="--i:1" role="img" aria-label="Portrait of Joseph Calderon, photo to be added">
+        <span class="about__photo-mark mono">photo</span>
+        <span class="about__photo-note mono">to be added</span>
+      </div>
+    </header>
+
+    <!-- The differentiator: teaching at scale -->
+    <section class="about__section about__teach reveal">
+      <span class="eyebrow">The differentiator</span>
+      <h2>I have taught roughly a thousand students.</h2>
+      <p>
+        Across three semesters of lecturing and tutoring, I reached about
+        <strong>1,000 students</strong>, lecturing multivariable calculus and linear
+        algebra, writing every exam, and leading a team of 14 tutors. Explaining hard
+        math to a room until it lands is the same skill as the rest of this site,
+        which is making rigor legible without dumbing it down.
+      </p>
+      <div class="teach__stats">
+        <div><span class="teach__n mono tnum" data-countup="1000" data-countup-prefix="~" data-countup-group="true">~1,000</span><span class="teach__k">students reached</span></div>
+        <div><span class="teach__n mono tnum" data-countup="300" data-countup-suffix="+">300+</span><span class="teach__k">students, 85–89% class average</span></div>
+        <div><span class="teach__n mono tnum" data-countup="14">14</span><span class="teach__k">tutors led</span></div>
+        <div><span class="teach__n mono tnum" data-countup="16">16</span><span class="teach__k">sections tutored</span></div>
+      </div>
+      <SourceTag source="profile.md" />
+    </section>
+
+    <!-- Experience -->
+    <section class="about__section">
+      <h2>Where I’ve worked.</h2>
+      <ol class="timeline">
+        {
+          experience.map((e, idx) => (
+            <li class:list={['timeline__item', 'reveal', { 'is-now': e.now }]} style={`--i:${idx}`}>
+              <div class="timeline__head">
+                <span class="timeline__role">{e.role}</span>
+                <span class="timeline__org">{e.org}</span>
+                <span class="timeline__when mono">{e.when}</span>
+              </div>
+              <p class="timeline__body">{e.body}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <!-- Education: grouped tightly under Experience as one "background" movement -->
+    <section class="about__section about__section--grouped">
+      <h2>Where I studied.</h2>
+      <ol class="timeline">
+        {
+          education.map((e, idx) => (
+            <li class="timeline__item reveal" style={`--i:${idx}`}>
+              <div class="timeline__head">
+                <span class="timeline__role">{e.school}</span>
+                <span class="timeline__when mono">{e.when}</span>
+              </div>
+              <p class="timeline__body">{e.detail}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <!-- Toolkit -->
+    <section class="about__section reveal">
+      <h2>What I reach for.</h2>
+      <ul class="chips">{toolkit.map((t) => <li class="chip mono">{t}</li>)}</ul>
+      <p class="about__cw">
+        <span class="eyebrow">Relevant coursework</span>
+        {coursework.join(' · ')}
+      </p>
+    </section>
+
+    <!-- Beyond work: music + biking -->
+    <section class="about__section reveal">
+      <h2>Mountain bikes and music.</h2>
+      <p>
+        When I am not modeling, I am on a trail or producing music. The music habit comes
+        from the same instinct as the projects, which is building something intricate and
+        tuning it until it feels right.
+      </p>
+
+      <div class="music">
+        <div class="music__label">
+          <span class="eyebrow">Music production</span>
+          <span class="music__tbd mono">section in progress</span>
+        </div>
+        <p class="music__body">
+          This is where a few tracks will live. To make it real, the plan is to add:
+        </p>
+        <ul class="music__plan">
+          <li>One or two embedded tracks (SoundCloud / Spotify / a hosted clip).</li>
+          <li>A line on the setup, such as the DAW, the genres, and what drew me in.</li>
+          <li>A screenshot or two of a session, for texture.</li>
+        </ul>
+        <p class="music__note mono">
+          Placeholder. Real assets are still to be added, and nothing here is fabricated.
+        </p>
+      </div>
+    </section>
+
+    <section class="about__section about__cta reveal">
+      <h2>Let us talk.</h2>
+      <p>I am open to data roles. Email is fastest, and full contact details are below.</p>
+      <div class="about__cta-links">
+        <a class="about__btn about__btn--primary" href={`mailto:${site.email}`}>Email me</a>
+        <a class="about__btn" href={site.linkedin}>LinkedIn</a>
+        <a class="about__btn" href="/#work">See the work</a>
+      </div>
+    </section>
+  </section>
+</BaseLayout>
+
+<style>
+  .about__col { max-width: 54rem; }
+  .about__back { display: inline-block; margin-top: var(--space-6); margin-bottom: var(--space-6); font-size: var(--step--1); color: var(--muted); text-decoration: none; }
+  .about__back:hover { color: var(--cobalt-ink); }
+
+  .about__header {
+    display: grid; gap: var(--space-6); align-items: start;
+    padding-bottom: var(--space-7); border-bottom: 1px solid var(--line);
+  }
+  @media (min-width: 44rem) { .about__header { grid-template-columns: 1.6fr 1fr; gap: var(--space-7); } }
+  .about__lede { margin-top: var(--space-5); font-size: var(--step-1); color: var(--ink); line-height: 1.5; max-width: 50ch; }
+  .about__photo {
+    aspect-ratio: 4 / 5; border-radius: var(--radius);
+    border: 1px dashed var(--line-strong); background: var(--surface);
+    display: grid; place-content: center; gap: 0.3rem; text-align: center;
+    color: var(--faint);
+  }
+  .about__photo-mark { font-size: var(--step-1); letter-spacing: 0.1em; text-transform: uppercase; }
+  .about__photo-note { font-size: var(--step--2); }
+
+  /* Rhythm: generous breaks between movements, tight pairing for grouped sections. */
+  .about__section { padding-top: var(--space-9); }
+  .about__section--grouped { padding-top: var(--space-6); }
+  .about__section > .eyebrow { display: block; margin-bottom: var(--space-3); }
+  .about__section h2 { font-size: var(--step-3); letter-spacing: -0.02em; max-width: 24ch; }
+  .about__section p { margin-top: var(--space-4); font-size: var(--step-0); color: var(--ink); line-height: 1.62; max-width: 56ch; }
+
+  .about__teach { padding: var(--space-7); margin-top: var(--space-8); background: color-mix(in oklab, var(--cobalt-soft) 30%, var(--bg)); border: 1px solid var(--cobalt-line); border-radius: var(--radius); }
+  .about__teach > .eyebrow { color: var(--cobalt-ink); }
+  .teach__stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-5); margin: var(--space-6) 0 var(--space-5); }
+  @media (min-width: 40rem) { .teach__stats { grid-template-columns: repeat(4, 1fr); } }
+  .teach__n { display: block; font-size: var(--step-3); font-weight: 650; color: var(--cobalt-ink); letter-spacing: -0.02em; }
+  .teach__k { font-size: var(--step--1); color: var(--ink); }
+
+  .timeline { list-style: none; padding: 0; margin-top: var(--space-5); display: grid; gap: var(--space-2); }
+  .timeline__item { padding: var(--space-5) 0; border-top: 1px solid var(--line); }
+  .timeline__item.is-now { border-top-color: var(--cobalt); }
+  .timeline__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.9rem; }
+  .timeline__role { font-weight: 600; color: var(--ink-strong); font-size: var(--step-1); letter-spacing: -0.01em; }
+  .timeline__org { color: var(--cobalt-ink); font-size: var(--step-0); }
+  .timeline__when { font-size: var(--step--2); color: var(--muted); margin-left: auto; }
+  .timeline__body { margin-top: 0.5rem !important; color: var(--ink); }
+
+  .chips { list-style: none; padding: 0; margin-top: var(--space-5); display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .chip { font-size: var(--step--1); color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 3px; padding: 0.25rem 0.6rem; }
+  .about__cw { font-size: var(--step--1) !important; color: var(--muted) !important; }
+  .about__cw .eyebrow { display: block; margin-bottom: 0.4rem; }
+
+  .music { margin-top: var(--space-6); padding: var(--space-6); border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--illus-soft); }
+  .music__label { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+  .music__tbd { font-size: var(--step--2); color: var(--illus); text-transform: uppercase; letter-spacing: 0.08em; }
+  .music__plan { margin: var(--space-3) 0 0; padding-left: 1.1rem; display: grid; gap: 0.4rem; }
+  .music__plan li { font-size: var(--step-0); color: var(--ink); }
+  .music__note { margin-top: var(--space-4) !important; font-size: var(--step--2) !important; color: var(--muted) !important; }
+
+  .about__cta { padding-top: var(--space-9); }
+  .about__cta-links { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-5); }
+  .about__btn { display: inline-flex; padding: 0.6rem 1.1rem; border: 1px solid var(--line-strong); border-radius: var(--radius); color: var(--ink-strong); text-decoration: none; font-size: var(--step--1); font-weight: 500; }
+  .about__btn:hover { border-color: var(--cobalt); }
+  .about__btn--primary { background: var(--cobalt); border-color: var(--cobalt); color: white; }
+  .about__btn--primary:hover { background: var(--cobalt-strong); }
+</style>

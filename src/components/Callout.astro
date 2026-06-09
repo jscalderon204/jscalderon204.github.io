@@ -1,0 +1,48 @@
+---
+/* An emphasis block for the intellectual beats of a case study:
+   'finding'  → cobalt (a measured insight)
+   'human'    → amber  (a human-stakes punchline)
+   'caution'  → graphite (honest limitations / a dropped approach) */
+interface Props {
+  variant?: 'finding' | 'human' | 'caution' | 'tldr';
+  label: string;
+}
+const { variant = 'finding', label } = Astro.props;
+---
+
+<aside class:list={['callout', `callout--${variant}`]}>
+  <span class="callout__label mono">{label}</span>
+  <div class="callout__body"><slot /></div>
+</aside>
+
+<style>
+  .callout {
+    margin-top: var(--space-6);
+    padding: var(--space-5) var(--space-6);
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--cobalt);
+    background: var(--bg);
+  }
+  .callout__label {
+    display: block;
+    font-size: var(--step--2);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .callout__body { font-size: var(--step-0); line-height: 1.55; }
+  .callout__body :global(strong) { color: var(--ink-strong); }
+
+  .callout--finding { border-left-color: var(--cobalt); background: color-mix(in oklab, var(--cobalt-soft) 35%, var(--bg)); }
+  .callout--finding .callout__label { color: var(--cobalt-ink); }
+
+  .callout--human { border-left-color: var(--amber); background: color-mix(in oklab, var(--amber-soft) 40%, var(--bg)); }
+  .callout--human .callout__label { color: var(--amber-ink); }
+
+  .callout--caution { border-left-color: var(--illus); background: var(--illus-soft); }
+  .callout--caution .callout__label { color: var(--illus); }
+
+  .callout--tldr { border-left-color: var(--ink-strong); border-left-width: 3px; background: var(--surface); }
+  .callout--tldr .callout__label { color: var(--ink-strong); }
+  .callout--tldr .callout__body { font-size: var(--step-1); color: var(--ink-strong); line-height: 1.5; }
+</style>

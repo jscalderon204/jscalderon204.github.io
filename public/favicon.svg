@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="oklch(0.55 0.15 250)" />
+  <!-- a measurement tick: the instrument mark -->
+  <path d="M8 20.5 L14 13 L18 17 L24 9" fill="none" stroke="white"
+    stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="24" cy="9" r="2.1" fill="oklch(0.74 0.15 60)" />
+</svg>

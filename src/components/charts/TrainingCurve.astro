@@ -1,0 +1,66 @@
+---
+import { trainingCurve, selectedEpoch } from '../../data/socalguessr';
+import { linear, niceTicks, linePath } from '../../lib/chart';
+
+/* Training curve, val + train accuracy over 80 epochs, from history.json.
+   The selected checkpoint (epoch 45, earliest within 1% of best val) is marked.
+   Static SVG, build-time. */
+const W = 660, H = 320;
+const m = { top: 24, right: 16, bottom: 44, left: 40 };
+const iw = W - m.left - m.right;
+const ih = H - m.top - m.bottom;
+
+const eMax = trainingCurve.length;
+const yMin = 40, yMax = 100;
+const x = linear(1, eMax, m.left, m.left + iw);
+const y = linear(yMin, yMax, m.top + ih, m.top);
+const ticks = niceTicks(yMin, yMax, 4);
+const xticks = [1, 20, 40, 60, 80];
+
+const valPath = linePath(trainingCurve.map((p) => [x(p.epoch), y(p.val)]));
+const trainPath = linePath(trainingCurve.map((p) => [x(p.epoch), y(p.train)]));
+const sel = trainingCurve.find((p) => p.epoch === selectedEpoch)!;
+---
+
+<div class="lc chart-anim" role="img" aria-label={`Training curve over ${eMax} epochs. The checkpoint at epoch ${selectedEpoch} (${sel.val}% val accuracy) was selected as the earliest within 1% of the best.`}>
+  <svg viewBox={`0 0 ${W} ${H}`} class="lc__svg" preserveAspectRatio="xMidYMid meet">
+    {ticks.map((t) => (
+      <g>
+        <line x1={m.left} x2={m.left + iw} y1={y(t)} y2={y(t)} stroke="var(--line)" />
+        <text x={m.left - 7} y={y(t)} text-anchor="end" dominant-baseline="middle" class="lc__tick mono">{t}</text>
+      </g>
+    ))}
+    {xticks.map((t) => (
+      <text x={x(t)} y={m.top + ih + 18} text-anchor="middle" class="lc__tick mono">{t}</text>
+    ))}
+    <text x={m.left + iw} y={m.top + ih + 36} text-anchor="end" class="lc__axis mono">epoch</text>
+
+    <!-- Train line keeps its dashed identity (no pathLength draw-in, which would
+         fight the dash pattern); it simply fades in. The solid val line draws. -->
+    <path class="lc__fade" d={trainPath} fill="none" stroke="var(--illus)" stroke-width="1.4" stroke-dasharray="4 3" opacity="0.8" />
+    <path class="lc__draw" pathLength="1" d={valPath} fill="none" stroke="var(--cobalt)" stroke-width="2" />
+
+    <!-- selected checkpoint marker (fades in once the curves have drawn) -->
+    <g class="lc__post">
+      <line x1={x(sel.epoch)} x2={x(sel.epoch)} y1={m.top} y2={m.top + ih} stroke="var(--cobalt-strong)" stroke-width="1" stroke-dasharray="2 2" opacity="0.6" />
+      <circle cx={x(sel.epoch)} cy={y(sel.val)} r="4.5" fill="var(--cobalt)" stroke="white" stroke-width="1.5" />
+      <text x={x(sel.epoch) + 8} y={y(sel.val) - 8} class="lc__mark mono">epoch {sel.epoch} · {sel.val}%</text>
+    </g>
+
+    <!-- legend -->
+    <g transform={`translate(${m.left + 8}, ${m.top + 6})`}>
+      <line x1="0" x2="18" y1="0" y2="0" stroke="var(--cobalt)" stroke-width="2" />
+      <text x="24" y="0" dominant-baseline="middle" class="lc__leg mono">val</text>
+      <line x1="64" x2="82" y1="0" y2="0" stroke="var(--illus)" stroke-width="1.4" stroke-dasharray="4 3" />
+      <text x="88" y="0" dominant-baseline="middle" class="lc__leg mono">train</text>
+    </g>
+  </svg>
+</div>
+
+<style>
+  .lc__svg { width: 100%; height: auto; }
+  .lc__tick { font-size: 11px; fill: var(--muted); }
+  .lc__axis { font-size: 10.5px; fill: var(--muted); }
+  .lc__mark { font-size: 11px; fill: var(--cobalt-strong); font-weight: 600; }
+  .lc__leg { font-size: 11px; fill: var(--ink); }
+</style>

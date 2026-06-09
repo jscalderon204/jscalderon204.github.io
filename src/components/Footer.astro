@@ -1,0 +1,106 @@
+---
+import { site } from '../data/site';
+const year = new Date().getFullYear();
+---
+
+<footer id="contact" class="footer">
+  <div class="container footer__inner">
+    <div class="footer__lead">
+      <p class="eyebrow">Contact</p>
+      <p class="footer__pitch">
+        Open to data roles. The fastest way to reach me is email.
+      </p>
+    </div>
+
+    <ul class="footer__links">
+      <li>
+        <span class="footer__k mono">Email</span>
+        <a href={`mailto:${site.email}`}>{site.email}</a>
+      </li>
+      <li>
+        <span class="footer__k mono">LinkedIn</span>
+        <a href={site.linkedin} rel="me">joseph-calderon</a>
+      </li>
+      <li>
+        <span class="footer__k mono">GitHub</span>
+        {
+          site.github ? (
+            <a href={site.github} rel="me">github</a>
+          ) : (
+            <span class="footer__tbd" title="Link to be added">coming soon</span>
+          )
+        }
+      </li>
+      <li>
+        <span class="footer__k mono">Résumé</span>
+        {
+          site.resumePdf ? (
+            <a href={site.resumePdf}>Download PDF</a>
+          ) : (
+            <span class="footer__tbd" title="Downloadable PDF to be added">coming soon</span>
+          )
+        }
+      </li>
+    </ul>
+  </div>
+
+  <div class="container footer__base">
+    <span class="mono">{site.name} · {site.location}</span>
+    <span class="mono footer__year">© {year}</span>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    margin-top: var(--space-9);
+    padding-top: var(--space-8);
+  }
+  .footer__inner {
+    display: grid;
+    gap: var(--space-6);
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 48rem) {
+    .footer__inner { grid-template-columns: 1.1fr 1fr; align-items: start; }
+  }
+  .footer__pitch {
+    font-size: var(--step-2);
+    color: var(--ink-strong);
+    letter-spacing: -0.015em;
+    margin-top: var(--space-3);
+    max-width: 24ch;
+  }
+  .footer__links {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 0.9rem;
+  }
+  .footer__links li {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    align-items: baseline;
+    gap: var(--space-4);
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--line);
+  }
+  .footer__k {
+    font-size: var(--step--2);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .footer__tbd { color: var(--faint); font-style: italic; }
+  .footer__base {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding-block: var(--space-6);
+    margin-top: var(--space-6);
+    font-size: var(--step--2);
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+  }
+</style>

@@ -1,0 +1,115 @@
+---
+/* Horizontal bar chart (HTML/CSS, build-time, responsive, real text labels).
+   Covers before/after, beats-the-locals, per-class recall, forced-answer skew.
+   Roles drive color: measured=cobalt, human/baseline=graphite, highlight=amber. */
+
+export interface Bar {
+  label: string;
+  value: number;
+  role?: 'measured' | 'human' | 'baseline' | 'highlight';
+  note?: string;       // small trailing note (e.g. "33,510 params")
+  flag?: string;       // a flag chip (e.g. "confusion sink")
+}
+interface Props {
+  data: Bar[];
+  max?: number;             // scale max (default: nice headroom over data max)
+  suffix?: string;          // value unit, e.g. "%"
+  decimals?: number;        // value formatting
+  reference?: { value: number; label: string }; // dashed reference line (e.g. chance)
+  ariaLabel: string;
+}
+const { data, max, suffix = '', decimals = 0, reference, ariaLabel } = Astro.props;
+const hi = max ?? Math.max(...data.map((d) => d.value), reference?.value ?? 0);
+const scaleMax = max ?? hi * 1.08;
+const fmt = (v: number) => v.toFixed(decimals) + suffix;
+const refPct = reference ? (reference.value / scaleMax) * 100 : 0;
+---
+
+<div class="hbar chart-anim" role="img" aria-label={ariaLabel}>
+  {reference && (
+    <div class="hbar__ref" style={`left:${refPct}%`}>
+      <span class="hbar__ref-label mono">{reference.label} · {fmt(reference.value)}</span>
+    </div>
+  )}
+  <div class="hbar__rows">
+    {
+      data.map((d) => (
+        <div class:list={['hbar__row', `is-${d.role ?? 'measured'}`]}>
+          <div class="hbar__label">
+            <span class="hbar__name">{d.label}</span>
+            {d.flag && <span class="hbar__flag mono">{d.flag}</span>}
+          </div>
+          <div class="hbar__track">
+            <div class="hbar__fill" style={`width:${(d.value / scaleMax) * 100}%`}>
+              <span class="hbar__val mono tnum">{fmt(d.value)}</span>
+            </div>
+            {d.note && <span class="hbar__note">{d.note}</span>}
+          </div>
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<style>
+  .hbar { position: relative; }
+  .hbar__rows { display: grid; gap: 0.7rem; }
+  .hbar__row {
+    display: grid;
+    grid-template-columns: minmax(7rem, 11rem) 1fr;
+    align-items: center;
+    gap: var(--space-4);
+  }
+  @media (max-width: 34rem) {
+    .hbar__row { grid-template-columns: 1fr; gap: 0.2rem; }
+  }
+  .hbar__label { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
+  .hbar__name { font-size: var(--step--1); color: var(--ink); }
+  .hbar__flag {
+    font-size: var(--step--2);
+    color: var(--amber-ink);
+    background: var(--amber-soft);
+    padding: 0.05rem 0.35rem; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .hbar__track {
+    position: relative;
+    display: flex; align-items: center; gap: 0.6rem;
+    background: linear-gradient(90deg, var(--surface-2) 0 0) no-repeat;
+    background-size: 100% 2px;
+    background-position: 0 100%;
+    min-height: 1.9rem;
+  }
+  .hbar__fill {
+    height: 1.45rem;
+    border-radius: 2px;
+    min-width: 2.5rem;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 0.5rem;
+    position: relative;
+    /* default measured */
+    background: var(--cobalt);
+    transition: width 0.9s var(--ease);
+  }
+  .is-human .hbar__fill { background: var(--illus); }
+  .is-baseline .hbar__fill {
+    background: repeating-linear-gradient(45deg, var(--illus) 0 5px, color-mix(in oklab, var(--illus) 70%, white) 5px 10px);
+  }
+  .is-highlight .hbar__fill { background: var(--amber); }
+  .hbar__val {
+    font-size: var(--step--1);
+    font-weight: 600;
+    color: white;
+  }
+  .is-baseline .hbar__val, .is-human .hbar__val { color: white; }
+  .hbar__note { font-size: var(--step--2); color: var(--muted); white-space: nowrap; }
+  .hbar__ref {
+    position: absolute; top: -0.4rem; bottom: 1.2rem;
+    border-left: 1px dashed var(--line-strong);
+    z-index: 2; pointer-events: none;
+  }
+  .hbar__ref-label {
+    position: absolute; top: -0.2rem; left: 0.3rem;
+    font-size: var(--step--2); color: var(--muted); white-space: nowrap;
+  }
+</style>

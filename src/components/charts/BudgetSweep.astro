@@ -1,0 +1,65 @@
+---
+import { budgetSweep } from '../../data/qwen';
+import { linear, niceTicks } from '../../lib/chart';
+
+/* Thinking-budget sweep, dev accuracy (%). 0-based axis (honest), optimum
+   marked. SVG renders at build time; ships zero JS. */
+const W = 640, H = 320;
+const m = { top: 28, right: 20, bottom: 56, left: 44 };
+const iw = W - m.left - m.right;
+const ih = H - m.top - m.bottom;
+
+const pts = budgetSweep.points;
+const yMax = 100;
+const y = linear(0, yMax, m.top + ih, m.top);
+const ticks = niceTicks(0, yMax, 5);
+
+const band = iw / pts.length;
+const bw = Math.min(96, band * 0.5);
+const cx = (i: number) => m.left + band * i + band / 2;
+---
+
+<div class="col chart-anim" role="img" aria-label="Thinking-budget sweep: dev accuracy peaks at 68.8% with a 12,288/9,000-token budget.">
+  <svg viewBox={`0 0 ${W} ${H}`} class="col__svg" preserveAspectRatio="xMidYMid meet">
+    <!-- gridlines + y ticks -->
+    {ticks.map((t) => (
+      <g>
+        <line x1={m.left} x2={W - m.right} y1={y(t)} y2={y(t)} stroke="var(--line)" stroke-width="1" />
+        <text x={m.left - 8} y={y(t)} text-anchor="end" dominant-baseline="middle"
+          class="col__tick mono">{t}</text>
+      </g>
+    ))}
+    <!-- connecting sweep line (shows it's a curve with a peak) -->
+    <polyline class="col__sweep" pathLength="1"
+      points={pts.map((p) => `${cx(pts.indexOf(p))},${y(p.devAcc)}`).join(' ')}
+      fill="none" stroke="var(--cobalt-line)" stroke-width="1.5" stroke-dasharray="3 3" />
+    {pts.map((p, i) => (
+      <g>
+        <rect class="col__bar" style={`--i:${i}`}
+          x={cx(i) - bw / 2} y={y(p.devAcc)} width={bw} height={m.top + ih - y(p.devAcc)}
+          rx="2"
+          fill={p.optimum ? 'var(--cobalt)' : 'var(--cobalt-soft)'}
+          stroke={p.optimum ? 'var(--cobalt-strong)' : 'var(--cobalt-line)'}
+          stroke-width="1" />
+        <text class="col__val col__lift mono tnum" style={`--i:${i}`}
+          x={cx(i)} y={y(p.devAcc) - 9} text-anchor="middle"
+          fill={p.optimum ? 'var(--cobalt-strong)' : 'var(--ink)'}>{p.devAcc}%</text>
+        {p.optimum && (
+          <text class="col__opt col__lift mono" style={`--i:${i}`}
+            x={cx(i)} y={y(p.devAcc) - 26} text-anchor="middle">optimum</text>
+        )}
+        <text x={cx(i)} y={m.top + ih + 20} text-anchor="middle" class="col__lab mono">{p.label}</text>
+      </g>
+    ))}
+    <text x={m.left} y={m.top + ih + 44} class="col__axis mono">max-tokens / thinking-budget</text>
+  </svg>
+</div>
+
+<style>
+  .col__svg { width: 100%; height: auto; }
+  .col__tick { font-size: 11px; fill: var(--muted); }
+  .col__val { font-size: 13px; font-weight: 600; }
+  .col__opt { font-size: 10px; fill: var(--cobalt-strong); letter-spacing: 0.12em; text-transform: uppercase; }
+  .col__lab { font-size: 11px; fill: var(--ink); }
+  .col__axis { font-size: 10.5px; fill: var(--muted); letter-spacing: 0.04em; }
+</style>

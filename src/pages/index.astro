@@ -1,0 +1,309 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Stat from '../components/Stat.astro';
+import Figure from '../components/Figure.astro';
+import HBar from '../components/charts/HBar.astro';
+import { site } from '../data/site';
+import { byRank } from '../data/projects';
+import { headline as qwen } from '../data/qwen';
+import { overall, beatsTheLocals } from '../data/socalguessr';
+
+const [flagship, second, third] = byRank;
+const localBar = beatsTheLocals.find((b) => b.who === '20-year LA local')!;
+---
+
+<BaseLayout>
+  {/* ───────────────────────── Hero: the 4-second win ────────────────────── */}
+  <section class="hero container">
+    <p class="eyebrow hero__kicker reveal" style="--i:0">
+      {site.role} · {site.location} · Open to data roles
+    </p>
+    <h1 class="hero__h1 reveal" style="--i:1">
+      <span class="hero__name">Joseph Calderon</span>
+      I look for the problems where the constraints are the interesting part.
+    </h1>
+    <p class="hero__lead reveal" style="--i:2">
+      What I enjoy most is getting research-grade results out of small models, tiny
+      networks, and a single GPU, and then reporting the numbers plainly enough that
+      anyone can check every one of them.
+    </p>
+
+    <!-- flagship readout -->
+    <div class="hero__readout reveal" style="--i:3">
+      <div class="hero__delta">
+        <Stat value="0.388" label="baseline" accent="none" size="md" countup />
+        <span class="hero__arrow mono" aria-hidden="true">→</span>
+        <Stat
+          value="0.724"
+          label="best run · math-reasoning leaderboard"
+          source="deck"
+          accent="cobalt"
+          size="lg"
+          countup
+        />
+        <div class="hero__gain">
+          <span class="hero__gain-v mono tnum">+{qwen.delta}</span>
+          <span class="hero__gain-k">zero training</span>
+        </div>
+      </div>
+      <p class="hero__readout-cap">
+        A fixed Qwen3-4B-Thinking model, pushed with prompting and decoding alone, on a
+        single 12&nbsp;GB GPU. <a href="/work/qwen-4b">See how it was done →</a>
+      </p>
+    </div>
+
+    <!-- 3-stat proof row -->
+    <ul class="hero__proof reveal" style="--i:4">
+      <li>
+        <Stat value="0.724" label="from a 0.388 baseline, zero training" source="deck" />
+      </li>
+      <li>
+        <Stat value="2×" label="a 20-year local at placing Street View photos" source="metrics.json" accent="amber" />
+      </li>
+      <li>
+        <Stat value="~1,000" label="students taught across three semesters" source="profile.md" />
+      </li>
+    </ul>
+
+    <div class="hero__cta reveal" style="--i:5">
+      <a class="btn btn--primary" href="#work">View the work</a>
+      <a class="btn" href={site.linkedin}>LinkedIn</a>
+      {site.resumePdf && <a class="btn" href={site.resumePdf}>Résumé (PDF)</a>}
+    </div>
+  </section>
+
+  {/* ───────────────────────────── Selected work ─────────────────────────── */}
+  <section id="work" class="container-wide container section">
+    <div class="work__head">
+      <h2>Selected work</h2>
+      <p class="work__sub">
+        Three projects, in order of depth. Each opens to the full method, the
+        rebuilt charts, and the honest limitations.
+      </p>
+    </div>
+
+    <!-- Flagship: breaks wider -->
+    <article class="feature reveal">
+      <div class="feature__body">
+        <div class="proj__meta">
+          <span class="proj__rank mono">01 · Flagship</span>
+          {flagship.tags.map((t) => <span class="tag mono">{t}</span>)}
+        </div>
+        <h3 class="feature__title">
+          <a href={`/work/${flagship.slug}`}>{flagship.title}</a>
+        </h3>
+        <p class="feature__sub">{flagship.subtitle}</p>
+        <p class="feature__what">{flagship.what}</p>
+        <a class="readmore" href={`/work/${flagship.slug}`}>Read the case study →</a>
+      </div>
+      <div class="feature__figure">
+        <Figure title="Leaderboard score" source="deck" scale="0–1 · 943 private q"
+          caption="Two runs, best of. Every gain came from inference-time levers, with no fine-tuning.">
+          <HBar
+            ariaLabel="Leaderboard score rose from a 0.388 baseline to 0.724."
+            decimals={3}
+            max={0.8}
+            data={[
+              { label: 'Baseline', value: qwen.baseline, role: 'baseline' },
+              { label: 'Best run', value: qwen.best, role: 'measured', note: '+0.336' },
+            ]}
+          />
+        </Figure>
+      </div>
+    </article>
+
+    <!-- #2 and #3: asymmetric 2-up -->
+    <div class="duo">
+      <article class="proj proj--wide reveal" style="--i:0">
+        <div class="proj__meta">
+          <span class="proj__rank mono">02</span>
+          {second.tags.slice(0, 3).map((t) => <span class="tag mono">{t}</span>)}
+        </div>
+        <h3 class="proj__title"><a href={`/work/${second.slug}`}>{second.title}</a></h3>
+        <p class="proj__sub">{second.subtitle}</p>
+        <p class="proj__what">{second.what}</p>
+        <Figure title="Accuracy" source="metrics.json" scale="held-out val"
+          caption="A 33,510-parameter network, trained in roughly fifteen minutes, against a lifelong resident.">
+          <HBar
+            ariaLabel="The CNN scores 83.6% versus a 20-year local's 40%."
+            suffix="%"
+            decimals={1}
+            max={100}
+            reference={{ value: 16.7, label: 'chance' }}
+            data={[
+              { label: '20-year local', value: localBar.pct, role: 'human' },
+              { label: 'The CNN', value: overall.accuracyPct, role: 'measured', note: '33,510 params' },
+            ]}
+          />
+        </Figure>
+        <a class="readmore" href={`/work/${second.slug}`}>Read the case study →</a>
+      </article>
+
+      <article class="proj proj--craft reveal" style="--i:1">
+        <div class="proj__meta">
+          <span class="proj__rank mono">03</span>
+          {third.tags.slice(0, 3).map((t) => <span class="tag mono">{t}</span>)}
+        </div>
+        <h3 class="proj__title"><a href={`/work/${third.slug}`}>{third.title}</a></h3>
+        <p class="proj__sub">{third.subtitle}</p>
+        <p class="proj__what">{third.what}</p>
+        <div class="proj__nometric mono">
+          There is no headline metric here, by design. The craft <em>is</em> the story.
+        </div>
+        <a class="readmore" href={`/work/${third.slug}`}>Watch it move →</a>
+      </article>
+    </div>
+  </section>
+
+  {/* ─────────────────────────── Credibility strip ───────────────────────── */}
+  <section class="container section-tight">
+    <div class="cred">
+      <div class="cred__item reveal" style="--i:0">
+        <span class="cred__k eyebrow">Now</span>
+        <p class="cred__v">Project Engineer Intern at <strong>General Atomics</strong> in Poway, CA.</p>
+      </div>
+      <div class="cred__item reveal" style="--i:1">
+        <span class="cred__k eyebrow">Teaching</span>
+        <p class="cred__v">
+          Lectured Multivariable Calculus and Linear Algebra, wrote every exam across
+          three semesters, and led 14 tutors, reaching about <strong>1,000 students</strong>.
+        </p>
+      </div>
+      <div class="cred__item reveal" style="--i:2">
+        <span class="cred__k eyebrow">Before</span>
+        <p class="cred__v">Data Analyst Intern at <strong>Dell Technologies</strong>, on software sales and licensing.</p>
+      </div>
+      <div class="cred__item reveal" style="--i:3">
+        <span class="cred__k eyebrow">Toolkit</span>
+        <p class="cred__v mono cred__tools">
+          Python · PyTorch · vLLM · transformers · scikit-learn · SQL · R · D3.js
+        </p>
+      </div>
+    </div>
+    <p class="cred__more"><a href="/about">More about Joseph →</a></p>
+  </section>
+</BaseLayout>
+
+<style>
+  /* ---- Buttons ---- */
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.6rem 1.1rem;
+    border: 1px solid var(--line-strong); border-radius: var(--radius);
+    color: var(--ink-strong); text-decoration: none;
+    font-size: var(--step--1); font-weight: 500;
+    transition: border-color 0.15s var(--ease), background 0.15s var(--ease), transform 0.05s var(--ease);
+  }
+  .btn:hover { border-color: var(--cobalt); }
+  .btn:active { transform: translateY(1px); }
+  .btn--primary { background: var(--cobalt); border-color: var(--cobalt); color: white; }
+  .btn--primary:hover { background: var(--cobalt-strong); border-color: var(--cobalt-strong); }
+
+  /* ---- Hero ---- */
+  /* Bottom padding is light: the work section's own top padding carries the
+     gap, so the hero/work transition is one generous break, not two stacked. */
+  .hero { padding-top: var(--space-8); padding-bottom: var(--space-5); }
+  .hero__kicker { margin-bottom: var(--space-5); }
+  .hero__h1 {
+    font-size: var(--step-6); line-height: 1.02; letter-spacing: -0.035em;
+    max-width: 18ch;
+  }
+  .hero__name {
+    display: block; font-size: var(--step-1); font-weight: 550;
+    color: var(--cobalt-ink); letter-spacing: -0.01em; margin-bottom: 0.6rem;
+  }
+  .hero__lead {
+    margin-top: var(--space-5); font-size: var(--step-1);
+    color: var(--ink); max-width: 56ch; line-height: 1.5;
+  }
+
+  .hero__readout {
+    margin-top: var(--space-7);
+    padding: var(--space-6);
+    border: 1px solid var(--line);
+    border-top: 2px solid var(--cobalt);
+    border-radius: var(--radius);
+    background: var(--bg);
+  }
+  .hero__delta { display: flex; align-items: flex-end; gap: clamp(0.8rem, 0.3rem + 2vw, 2rem); flex-wrap: wrap; }
+  .hero__arrow { font-size: var(--step-3); color: var(--muted); padding-bottom: 0.6rem; }
+  .hero__gain { display: grid; gap: 0.1rem; padding-bottom: 0.4rem; }
+  .hero__gain-v { font-size: var(--step-2); font-weight: 650; color: var(--amber-ink); }
+  .hero__gain-k {
+    font-size: var(--step--2); color: var(--amber-ink); text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .hero__readout-cap { margin-top: var(--space-5); color: var(--muted); font-size: var(--step-0); }
+
+  .hero__proof {
+    list-style: none; padding: 0; margin-top: var(--space-7);
+    display: grid; gap: var(--space-6);
+    grid-template-columns: 1fr;
+    border-top: 1px solid var(--line); padding-top: var(--space-6);
+  }
+  @media (min-width: 40rem) { .hero__proof { grid-template-columns: repeat(3, 1fr); } }
+  .hero__cta { margin-top: var(--space-7); display: flex; gap: var(--space-3); flex-wrap: wrap; }
+
+  /* ---- Work ---- */
+  .work__head { margin-bottom: var(--space-7); }
+  .work__sub { margin-top: var(--space-3); color: var(--muted); font-size: var(--step-0); }
+
+  .proj__meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: var(--space-3); }
+  .proj__rank { font-size: var(--step--2); color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+  .tag {
+    font-size: var(--step--2); color: var(--ink);
+    background: var(--surface-2); border-radius: 3px;
+    padding: 0.1rem 0.45rem;
+  }
+
+  .feature {
+    display: grid; gap: var(--space-6); align-items: center;
+    padding: var(--space-7) 0;
+    border-top: 1px solid var(--line-strong);
+  }
+  @media (min-width: 52rem) { .feature { grid-template-columns: 1fr 1.05fr; gap: var(--space-8); } }
+  .feature__title { font-size: var(--step-4); letter-spacing: -0.03em; }
+  .feature__title a, .proj__title a { color: var(--ink-strong); text-decoration: none; }
+  .feature__title a:hover, .proj__title a:hover { color: var(--cobalt-ink); }
+  .feature__sub { margin-top: 0.5rem; color: var(--cobalt-ink); font-size: var(--step-1); }
+  .feature__what { margin-top: var(--space-4); color: var(--ink); max-width: 52ch; }
+
+  .readmore {
+    display: inline-block; margin-top: var(--space-5);
+    font-weight: 550; color: var(--cobalt-ink); text-decoration: none;
+    font-size: var(--step-0);
+    transition: transform 0.15s var(--ease);
+  }
+  .readmore:hover { text-decoration: underline; text-underline-offset: 4px; transform: translateX(2px); }
+
+  .duo {
+    display: grid; gap: var(--space-6);
+    border-top: 1px solid var(--line); padding-top: var(--space-7);
+  }
+  @media (min-width: 52rem) { .duo { grid-template-columns: 1.25fr 0.75fr; gap: var(--space-7); } }
+  .proj__title { font-size: var(--step-2); margin-top: 0.2rem; }
+  .proj__sub { margin-top: 0.4rem; color: var(--cobalt-ink); font-size: var(--step-0); }
+  .proj__what { margin-top: var(--space-3); color: var(--ink); font-size: var(--step-0); }
+  .proj--wide .proj__what { max-width: 48ch; }
+  .proj :global(.fig) { margin-top: var(--space-5); }
+  .proj__nometric {
+    margin-top: var(--space-5); padding: var(--space-5);
+    border: 1px dashed var(--line-strong); border-radius: var(--radius);
+    color: var(--muted); font-size: var(--step--1); background: var(--illus-soft);
+  }
+  .proj__nometric em { color: var(--ink-strong); font-style: italic; }
+
+  /* ---- Credibility ---- */
+  .cred {
+    display: grid; gap: var(--space-5);
+    grid-template-columns: 1fr;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    padding-block: var(--space-6);
+  }
+  @media (min-width: 44rem) { .cred { grid-template-columns: repeat(2, 1fr); gap: var(--space-6) var(--space-7); } }
+  @media (min-width: 64rem) { .cred { grid-template-columns: repeat(4, 1fr); } }
+  .cred__k { display: block; margin-bottom: 0.5rem; }
+  .cred__v { font-size: var(--step--1); color: var(--ink); line-height: 1.5; }
+  .cred__tools { font-size: var(--step--2); color: var(--muted); line-height: 1.7; }
+  .cred__more { margin-top: var(--space-5); }
+</style>

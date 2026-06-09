@@ -1,0 +1,241 @@
+---
+import CaseLayout from '../../layouts/CaseLayout.astro';
+import Figure from '../../components/Figure.astro';
+import Callout from '../../components/Callout.astro';
+import { site } from '../../data/site';
+---
+
+<CaseLayout
+  slug="sea-ice"
+  sources={['hero_logic.js', 'dataviz_proj_overview.md', 'sea-ice-showcase.mp4']}
+  description="A scroll-driven D3 data story on Arctic sea-ice decline. The defining quality is smoothness: the chart is a continuous function of scroll position."
+>
+  <Callout variant="tldr" label="TL;DR">
+    A scroll-driven story about decades of Arctic sea-ice decline, built in D3.
+    There are <strong>no headline metrics here, and none invented.</strong> The
+    craft <em>is</em> the result: the chart redraws frame by frame as you scroll,
+    its scales and marks interpolating between states rather than cutting between
+    them. Scroll the panel below to feel it.
+  </Callout>
+
+  <Figure
+    title="Scroll-interpolation, demonstrated"
+    measured={false}
+    caption="Scroll this panel: the curve is redrawn every frame as a function of scroll position. This is a schematic of the technique; the real piece, with real NSIDC data, is the recording below.">
+    <div class="scrolly" id="scrolly">
+      <div class="scrolly__sticky">
+        <div class="scrolly__readout">
+          <span class="scrolly__year mono tnum" id="ice-year">1979</span>
+          <span class="scrolly__cap mono">September minimum · relative extent · schematic</span>
+        </div>
+        <canvas id="ice-canvas" class="scrolly__canvas" aria-hidden="true"></canvas>
+        <p class="scrolly__hint mono" id="ice-hint">↓ scroll</p>
+      </div>
+    </div>
+    <p class="visually-hidden">
+      An interactive demonstration: as the reader scrolls, a schematic sea-ice
+      extent curve is continuously redrawn, morphing from a high 1979 state to a
+      lower recent state, illustrating the scroll-driven interpolation technique.
+    </p>
+  </Figure>
+
+  <section class="case-section">
+    <span class="eyebrow">The piece</span>
+    <h2>The finished story, recorded.</h2>
+    <p>
+      The published explorable explanation runs on real Arctic sea-ice data in D3,
+      deployed as an interactive web page. Until a live demo link is wired up, here
+      is a recording of the real thing.
+    </p>
+    <figure class="video">
+      <video
+        id="showcase"
+        src="/assets/sea-ice-showcase.mp4"
+        controls
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        autoplay
+      ></video>
+      <figcaption class="video__cap">
+        Recording of the deployed Sea Ice explorable. Source: <span class="mono">sea-ice-showcase.mp4</span>.
+        {site.github ? '' : ' A live demo link is an open item.'}
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="case-section">
+    <span class="eyebrow">The engineering</span>
+    <h2>Why it feels smooth.</h2>
+    <p class="lede">
+      The chart is effectively a function of scroll position, but binding the chart
+      state directly to the raw scroll pixel feels jittery, because raw scroll is noisy
+      and discrete. The smoothness comes from decoupling the two.
+    </p>
+    <p>
+      A tracked position is <strong>eased toward the real scroll every frame</strong>
+      (<code>smoothScroll += (target − smoothScroll) × 0.16</code>), and the render
+      loop runs on <code>requestAnimationFrame</code> rather than the scroll event.
+      So when you flick the page, the visualization does not snap; it <em>chases</em>
+      the target and settles, with every intermediate frame drawn. Transitions
+      between states use a <code>smoothstep</code> ease, so scales and opacities
+      accelerate and decelerate instead of moving linearly.
+    </p>
+    <p>
+      Depth is layered the same way: parallax elements move at different rates per
+      pixel scrolled, and each frame only does work while the eased position is still
+      chasing its target, so idle frames are skipped. The result is a redraw that reads
+      as continuous motion, not a slideshow of keyframes.
+    </p>
+    <Callout variant="caution" label="Honest scope">
+      This is a craft-first, qualitative piece. There is no accuracy number to report,
+      and inventing one would betray the rest of this site. The dataset specifics and a
+      live demo URL are open items still to be wired in.
+    </Callout>
+  </section>
+</CaseLayout>
+
+<style>
+  .scrolly { position: relative; height: 320vh; }
+  .scrolly__sticky {
+    position: sticky; top: 0;
+    height: 100vh; max-height: 620px;
+    display: grid; align-content: center; gap: var(--space-4);
+    padding: var(--space-5) 0;
+  }
+  .scrolly__readout { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; }
+  .scrolly__year { font-size: var(--step-5); font-weight: 650; color: var(--cobalt-ink); line-height: 1; }
+  .scrolly__cap { font-size: var(--step--2); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .scrolly__canvas { width: 100%; height: clamp(220px, 40vh, 360px); display: block; }
+  .scrolly__hint { font-size: var(--step--2); color: var(--faint); letter-spacing: 0.2em; text-transform: uppercase; transition: opacity 0.3s var(--ease); }
+
+  .video { margin-top: var(--space-6); }
+  .video video {
+    width: 100%; border-radius: var(--radius);
+    border: 1px solid var(--line-strong); background: var(--surface-2);
+  }
+  .video__cap { margin-top: var(--space-3); font-size: var(--step--1); color: var(--muted); }
+</style>
+
+<script>
+  // Scroll-driven interpolation demo: a faithful, original re-build of the
+  // technique described from hero_logic.js (eased tracked position + rAF render
+  // + smoothstep). Schematic data only; no real measurements are presented.
+  const scrolly = document.getElementById('scrolly');
+  const canvas = document.getElementById('ice-canvas') as HTMLCanvasElement | null;
+  const yearEl = document.getElementById('ice-year');
+  const hintEl = document.getElementById('ice-hint');
+  const video = document.getElementById('showcase') as HTMLVideoElement | null;
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Respect reduced-motion for the showcase video too.
+  if (video && reduce) { video.removeAttribute('autoplay'); video.pause(); }
+
+  if (scrolly && canvas) {
+    const ctx = canvas.getContext('2d')!;
+    // Two schematic seasonal profiles (relative extent 0..1). High = 1979-ish,
+    // low = recent. The curve is interpolated point-wise by eased progress.
+    const HIGH = [0.78, 0.86, 0.95, 1.0, 0.93, 0.74, 0.5, 0.34, 0.3, 0.42, 0.6, 0.72];
+    const LOW  = [0.5, 0.58, 0.66, 0.72, 0.64, 0.46, 0.27, 0.14, 0.11, 0.2, 0.34, 0.44];
+    const YEAR0 = 1979, YEAR1 = 2023;
+
+    let w = 0, h = 0, dpr = 1;
+    let target = 0, eased = 0, firstFrame = true;
+
+    const smoothstep = (t: number) => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = canvas!.clientWidth; h = canvas!.clientHeight;
+      canvas!.width = Math.round(w * dpr); canvas!.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      firstFrame = true;
+    }
+
+    function progress() {
+      const rect = scrolly!.getBoundingClientRect();
+      const total = scrolly!.offsetHeight - window.innerHeight;
+      return Math.min(1, Math.max(0, -rect.top / (total || 1)));
+    }
+
+    // Smooth curve through points (Catmull-Rom-ish) for the area path.
+    function curveY(arr: number[], pad: number) {
+      const innerH = h - pad * 2;
+      return (i: number, frac: number) => {
+        const a = arr[i], b = arr[Math.min(arr.length - 1, i + 1)];
+        const v = a + (b - a) * frac;
+        return pad + (1 - v) * innerH;
+      };
+    }
+
+    function draw(p: number) {
+      const e = smoothstep(p);
+      ctx.clearRect(0, 0, w, h);
+      const pad = 14;
+      const n = HIGH.length;
+      const stepX = w / (n - 1);
+
+      // interpolated active profile
+      const active = HIGH.map((hi, i) => hi + (LOW[i] - hi) * e);
+
+      // reference (1979) ghost line
+      const refY = curveY(HIGH, pad);
+      const actY = curveY(active, pad);
+
+      const linePts = (yfn: (i: number, f: number) => number) => {
+        const pts: [number, number][] = [];
+        for (let i = 0; i < n; i++) pts.push([i * stepX, yfn(i, 0)]);
+        return pts;
+      };
+
+      // filled area under the active curve (the ice)
+      const act = linePts(actY);
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      act.forEach(([x, y]) => ctx.lineTo(x, y));
+      ctx.lineTo(w, h);
+      ctx.closePath();
+      ctx.fillStyle = 'oklch(0.93 0.035 250)';
+      ctx.fill();
+
+      // loss band between reference and active (amber = what's gone)
+      const ref = linePts(refY);
+      ctx.beginPath();
+      ref.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      for (let i = act.length - 1; i >= 0; i--) ctx.lineTo(act[i][0], act[i][1]);
+      ctx.closePath();
+      ctx.fillStyle = `oklch(0.74 0.15 60 / ${0.10 + 0.22 * e})`;
+      ctx.fill();
+
+      // reference line (dashed graphite)
+      ctx.setLineDash([4, 4]); ctx.lineWidth = 1.2;
+      ctx.strokeStyle = 'oklch(0.62 0.012 260)';
+      ctx.beginPath(); ref.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // active line (cobalt)
+      ctx.lineWidth = 2.4; ctx.strokeStyle = 'oklch(0.55 0.15 250)'; ctx.lineJoin = 'round';
+      ctx.beginPath(); act.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+
+      if (yearEl) yearEl.textContent = String(Math.round(YEAR0 + (YEAR1 - YEAR0) * e));
+      if (hintEl) hintEl.style.opacity = String(Math.max(0, 1 - p * 4));
+    }
+
+    function frame() {
+      target = progress();
+      eased += (target - eased) * 0.16;
+      if (Math.abs(target - eased) < 0.0005) eased = target;
+      // Only redraw while the eased position is still chasing its target (or once).
+      if (firstFrame || Math.abs(target - eased) > 0.0002) draw(eased);
+      firstFrame = false;
+      requestAnimationFrame(frame);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    // reduced-motion: render the final (recent) state immediately, no chase.
+    if (reduce) { draw(1); } else { requestAnimationFrame(frame); }
+  }
+</script>

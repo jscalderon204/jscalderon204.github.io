@@ -1,0 +1,65 @@
+---
+import { promptProgression } from '../../data/qwen';
+
+/* Prompt engineering, leaderboard score (0–1), 943 private questions.
+   0-based axis (max 0.8 headroom, never truncated at the start). The best run
+   (Prompt I · temp 0.6 = 0.724) is emphasized; deltas are small and shown exactly. */
+const SCALE_MAX = 0.8;
+const best = 0.724;
+const pct = (v: number) => (v / SCALE_MAX) * 100;
+---
+
+<div class="pp chart-anim" role="img" aria-label="Prompt engineering on the leaderboard scale: Prompt I at temperature 0.6 reaches 0.724, the best run.">
+  {
+    promptProgression.series.map((s) => (
+      <div class="pp__group">
+        <div class="pp__name mono">{s.prompt}</div>
+        <div class="pp__bars">
+          {([['greedy', s.greedy], ['temp 0.6', s.temp06]] as const).map(([k, v]) => (
+            <div class="pp__row">
+              <span class="pp__k mono">{k}</span>
+              <div class="pp__track">
+                <div
+                  class:list={['pp__fill', { 'is-best': v === best }]}
+                  style={`width:${pct(v)}%`}
+                >
+                  <span class="pp__val mono tnum">{v.toFixed(3)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))
+  }
+  <p class="pp__note">{promptProgression.note} Best run marked.</p>
+</div>
+
+<style>
+  .pp { display: grid; gap: var(--space-5); }
+  .pp__group { display: grid; gap: 0.5rem; }
+  .pp__name {
+    font-size: var(--step--1); font-weight: 600; color: var(--ink-strong);
+    padding-bottom: 0.3rem; border-bottom: 1px solid var(--line);
+  }
+  .pp__bars { display: grid; gap: 0.45rem; }
+  .pp__row { display: grid; grid-template-columns: 4.5rem 1fr; align-items: center; gap: var(--space-3); }
+  .pp__k { font-size: var(--step--2); color: var(--muted); }
+  .pp__track { background: var(--surface-2); border-radius: 2px; }
+  .pp__fill {
+    height: 1.3rem; border-radius: 2px; min-width: 3rem;
+    background: var(--cobalt-soft);
+    border: 1px solid var(--cobalt-line);
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 0.45rem;
+    transition: width 0.9s var(--ease);
+  }
+  .pp__fill.is-best {
+    background: var(--cobalt);
+    border-color: var(--cobalt-strong);
+    box-shadow: 0 0 0 3px var(--cobalt-soft);
+  }
+  .pp__val { font-size: var(--step--2); font-weight: 600; color: var(--cobalt-strong); }
+  .pp__fill.is-best .pp__val { color: white; }
+  .pp__note { font-size: var(--step--1); color: var(--muted); margin-top: 0.2rem; }
+</style>

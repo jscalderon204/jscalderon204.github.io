@@ -1,0 +1,109 @@
+---
+import SourceTag from './SourceTag.astro';
+
+/* One token, two states, redundantly encoded so it survives grayscale and
+   colorblindness (color + typographic treatment + marker + label):
+     MEASURED    → cobalt accent + source tag (provenance present)
+     ILLUSTRATIVE → graphite, no accent + hatched chip + "Schematic" label */
+interface Props {
+  title: string;
+  measured?: boolean;        // default true
+  source?: string;           // required when measured
+  caption?: string;
+  /** Mark this figure as a scale-distinct treatment (used for Qwen's two scales). */
+  scale?: string;
+}
+const { title, measured = true, source, caption, scale } = Astro.props;
+if (measured && !source) {
+  throw new Error(
+    `Figure "${title}" is measured but has no source. Every measured figure must ` +
+    `trace to a real file (measured-truth rule). Pass measured={false} for schematics.`
+  );
+}
+---
+
+<figure class:list={['fig', measured ? 'fig--measured' : 'fig--illustrative']}>
+  <figcaption class="fig__head">
+    <div class="fig__titles">
+      <span class="fig__title">{title}</span>
+      {scale && <span class="fig__scale mono">{scale}</span>}
+    </div>
+    {
+      measured ? (
+        <SourceTag source={source!} />
+      ) : (
+        <span class="fig__schematic mono">
+          <span class="fig__hatch" aria-hidden="true"></span>
+          Schematic, not to scale
+        </span>
+      )
+    }
+  </figcaption>
+
+  <div class="fig__body">
+    <slot />
+  </div>
+
+  {caption && <p class="fig__cap">{caption}</p>}
+
+  {/* Accessible data equivalent for charts (rendered if provided). */}
+  <slot name="table" />
+</figure>
+
+<style>
+  .fig {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg);
+    padding: var(--space-5);
+    container-type: inline-size;
+  }
+  .fig--measured { border-top: 2px solid var(--cobalt); }
+  .fig--illustrative {
+    border-top: 2px dashed var(--illus);
+    background: var(--illus-soft);
+  }
+  .fig__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+  .fig__titles { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+  .fig__title {
+    font-weight: 600;
+    color: var(--ink-strong);
+    font-size: var(--step-0);
+    letter-spacing: -0.01em;
+  }
+  .fig__scale {
+    font-size: var(--step--2);
+    color: var(--muted);
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 3px;
+  }
+  .fig__schematic {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: var(--step--2);
+    color: var(--illus);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .fig__hatch {
+    width: 14px; height: 10px; border-radius: 2px;
+    background-image: repeating-linear-gradient(
+      45deg, var(--illus) 0 1.5px, transparent 1.5px 4px);
+    opacity: 0.7;
+  }
+  .fig__cap {
+    margin-top: var(--space-4);
+    font-size: var(--step--1);
+    color: var(--muted);
+    max-width: 60ch;
+  }
+</style>

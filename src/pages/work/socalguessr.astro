@@ -1,0 +1,137 @@
+---
+import CaseLayout from '../../layouts/CaseLayout.astro';
+import Figure from '../../components/Figure.astro';
+import Callout from '../../components/Callout.astro';
+import DataTable from '../../components/DataTable.astro';
+import HBar from '../../components/charts/HBar.astro';
+import ConfusionMatrix from '../../components/charts/ConfusionMatrix.astro';
+import TrainingCurve from '../../components/charts/TrainingCurve.astro';
+import {
+  overall, beatsTheLocals, beatsSource, perClassRecall, selectedEpoch,
+} from '../../data/socalguessr';
+
+const beatsBars = beatsTheLocals.map((b) => ({
+  label: b.who,
+  value: b.pct,
+  role: b.kind === 'model' ? 'measured' as const : 'human' as const,
+  note: b.note,
+}));
+---
+
+<CaseLayout
+  slug="socalguessr"
+  sources={['metrics.json', 'history.json', 'model_info.json', 'socalguessr-paper.pdf', 'socalguessr_train.py']}
+  description="A 33,510-parameter CNN that places a Street View photo in one of six SoCal cities at 83.6%, more than doubling the accuracy of a twenty-year local."
+>
+  <Callout variant="tldr" label="TL;DR">
+    Six Southern California cities that share climate, vegetation, and road design.
+    From a single 64×32 Street View thumbnail, a <strong>33,510-parameter CNN</strong>
+    picks the right city <strong>83.6%</strong> of the time. A twenty-year LA local
+    managed 40%, and I managed 24%. The model learned to do this in roughly fifteen
+    minutes of training on a CPU.
+  </Callout>
+
+  <Figure title="Who can place a Street View photo?" source={beatsSource} scale="held-out val · 6 cities"
+    caption="The model versus humans, against the 16.7% chance line. Model accuracy is from metrics.json; the human trials are reported in the project brief.">
+    <HBar
+      ariaLabel="The CNN scores 83.6% versus 40% for a 20-year LA local, 24% for the author, and 16.7% chance."
+      suffix="%"
+      decimals={1}
+      max={100}
+      reference={{ value: 16.7, label: 'chance' }}
+      data={beatsBars}
+    />
+    <DataTable slot="table" caption="Accuracy at placing a Street View photo, model versus humans."
+      columns={['Who', 'Accuracy', 'Note']} numCols={[1]}
+      rows={beatsTheLocals.map((b) => [b.who, b.pct + '%', b.note])} />
+  </Figure>
+
+  <Callout variant="human" label="The punchline">
+    A net with <strong>33,510 parameters</strong>, trained in about fifteen minutes,
+    <strong> more than doubles a person who has lived in LA for twenty years.</strong>
+  </Callout>
+
+  <section class="case-section">
+    <span class="eyebrow">The task</span>
+    <h2>Six cities that look the same.</h2>
+    <p class="lede">
+      Anaheim, Bakersfield, Los Angeles, Riverside, San Luis Obispo, and San Diego sit
+      in one region, sharing palms, stucco, and freeways. Telling them apart from a
+      single street-level frame is genuinely hard, even for locals.
+    </p>
+    <p>
+      The data is <strong>9,181 Street View images</strong>, near-balanced across the
+      six classes, split 80/20 with a fixed seed into 7,345 training and 1,836
+      validation images. Each image is downscaled to <strong>64×32×3</strong>, which is
+      small enough that legible signage is thrown away, so the accuracy reads as a
+      <em> floor</em> rather than a ceiling.
+    </p>
+  </section>
+
+  <section class="case-section">
+    <span class="eyebrow">The model</span>
+    <h2>Small by design.</h2>
+    <p>
+      Four convolutional blocks (16→32→32→64 channels, 3×3 convs, batch-norm + ReLU),
+      a global average pool to a 64-vector, and a linear head to six logits, for
+      <strong> 33,510 parameters</strong> in total.
+      Trained with Adam (lr 3e-4), cross-entropy on raw logits, batch 64, for 80
+      epochs. The point was to see how far a deliberately tiny model could go.
+    </p>
+    <p>
+      Checkpoint selection avoided cherry-picking. Rather than the single best epoch,
+      it took the <strong>earliest epoch within 1% of the best validation accuracy</strong>,
+      which was epoch {selectedEpoch}, at {overall.accuracyPct}%
+      ({overall.correct.toLocaleString()} / {overall.total.toLocaleString()}).
+    </p>
+    <Figure title="Training curve" source="history.json" scale="80 epochs"
+      caption={`Validation and training accuracy over 80 epochs. The selected checkpoint (epoch ${selectedEpoch}) is the earliest within 1% of the best val accuracy, not the peak.`}>
+      <TrainingCurve />
+    </Figure>
+  </section>
+
+  <section class="case-section">
+    <span class="eyebrow">Results · where it wins and loses</span>
+    <h2>LA is the confusion sink.</h2>
+    <p>
+      Per-class recall ranges from Riverside's 94% down to LA's 75%. Los Angeles is
+      the hardest class, because its sprawl looks like everywhere else, so other
+      cities' mistakes tend to land on it.
+    </p>
+    <Figure title="Per-class recall" source="metrics.json" scale="held-out val"
+      caption="Recall by city, sorted. Riverside is the most distinctive; LA the least.">
+      <HBar
+        ariaLabel="Per-class recall ranges from Riverside at 94% to Los Angeles at 75.2%."
+        suffix="%"
+        decimals={1}
+        max={100}
+        data={perClassRecall.map((c) => ({
+          label: c.city,
+          value: c.recallPct,
+          role: 'measured' as const,
+          flag: c.sink ? 'confusion sink' : undefined,
+        }))}
+      />
+      <DataTable slot="table" caption="Per-class recall."
+        columns={['City', 'Recall', 'Correct / total']} numCols={[1]}
+        rows={perClassRecall.map((c) => [c.city, c.recallPct + '%', `${c.correct} / ${c.total}`])} />
+    </Figure>
+
+    <Figure title="Confusion matrix" source="metrics.json" scale="validation image counts"
+      caption="Each row is one true city; columns are the model's guess. Each cell is the raw number of validation images, and color tracks that count. The diagonal is correct. Hover or focus a cell to read its exact count and share of the row.">
+      <ConfusionMatrix />
+    </Figure>
+  </section>
+
+  <section class="case-section">
+    <span class="eyebrow">Honest limitations</span>
+    <h2>What the number does not say.</h2>
+    <Callout variant="caution" label="Read 83.6% as a floor">
+      <strong>64×32 input discards signage and fine texture</strong>, so a model that
+      could read street signs would do better, which is why this reads as a floor.
+      The <strong>single validation split also guided checkpoint selection</strong>, so
+      the headline likely slightly overstates truly-unseen performance. Six cities in
+      one region is a deliberately narrow slice.
+    </Callout>
+  </section>
+</CaseLayout>

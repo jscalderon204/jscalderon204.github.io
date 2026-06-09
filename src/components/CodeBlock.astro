@@ -1,0 +1,45 @@
+---
+interface Props {
+  code: string;
+  filename: string;
+  lang?: string;
+}
+const { code, filename, lang = 'python' } = Astro.props;
+---
+
+<div class="code">
+  <div class="code__bar">
+    <span class="code__dot" aria-hidden="true"></span>
+    <span class="code__file mono">{filename}</span>
+    <span class="code__lang mono">{lang}</span>
+  </div>
+  <pre class="code__pre"><code class="mono">{code}</code></pre>
+</div>
+
+<style>
+  .code {
+    margin-top: var(--space-6);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .code__bar {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .code__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cobalt); flex: none; }
+  .code__file { font-size: var(--step--2); color: var(--ink-strong); }
+  .code__lang { font-size: var(--step--2); color: var(--muted); margin-left: auto; text-transform: uppercase; letter-spacing: 0.08em; }
+  .code__pre {
+    margin: 0; padding: var(--space-5);
+    overflow-x: auto;
+    font-size: clamp(0.72rem, 0.66rem + 0.3vw, 0.82rem);
+    line-height: 1.65;
+    color: var(--ink);
+    tab-size: 2;
+  }
+  .code__pre code { color: inherit; background: none; font-feature-settings: 'tnum' 0; }
+</style>

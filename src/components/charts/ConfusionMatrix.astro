@@ -1,0 +1,85 @@
+---
+import { confusion, confusionMaxCount, cityShort } from '../../data/socalguessr';
+
+/* Confusion matrix showing RAW COUNTS (not row proportions). Color encodes the
+   count on a single global scale (sklearn ConfusionMatrixDisplay convention),
+   always paired with the printed number, so it never depends on color alone.
+   Diagonal (correct) cells are outlined. Hover or focus a cell to highlight its
+   true-city row and predicted-city column and read the exact count and share.
+   Renders to static SVG at build; the interactivity is progressive. */
+const n = cityShort.length;
+const cell = 64;
+const padL = 92, padT = 78, padR = 16, padB = 16;
+const W = padL + n * cell + padR;
+const H = padT + n * cell + padB;
+
+// count → cobalt fill via lightness, normalized to the largest cell.
+function fill(count: number) {
+  const f = confusionMaxCount > 0 ? count / confusionMaxCount : 0;
+  const l = 0.97 - f * 0.52; // 0.97 (empty) → 0.45 (densest cell)
+  const c = 0.02 + f * 0.14;
+  return `oklch(${l.toFixed(3)} ${c.toFixed(3)} 250)`;
+}
+const inkOn = (count: number) =>
+  (confusionMaxCount > 0 && count / confusionMaxCount >= 0.5 ? 'white' : 'var(--ink)');
+---
+
+<div class="cm chart-anim" data-cm role="group" aria-label="Confusion matrix. Rows are the true city, columns the predicted city; each value is a raw count of validation images. Tab through the cells to hear each one.">
+  <svg viewBox={`0 0 ${W} ${H}`} class="cm__svg" preserveAspectRatio="xMidYMid meet">
+    <!-- axis labels -->
+    <text x={padL + (n * cell) / 2} y="20" text-anchor="middle" class="cm__axis mono">predicted →</text>
+    <text x="16" y={padT + (n * cell) / 2} text-anchor="middle" class="cm__axis mono"
+      transform={`rotate(-90 16 ${padT + (n * cell) / 2})`}>true city →</text>
+
+    {cityShort.map((c, j) => (
+      <text data-cm-col={j} x={padL + j * cell + cell / 2} y={padT - 10} text-anchor="middle" class="cm__col mono">{c}</text>
+    ))}
+    {cityShort.map((c, i) => (
+      <text data-cm-row={i} x={padL - 10} y={padT + i * cell + cell / 2} text-anchor="end" dominant-baseline="middle" class="cm__row mono">{c}</text>
+    ))}
+
+    {confusion.map((row, i) =>
+      row.map((d, j) => (
+        <g
+          class="cm__cellg"
+          style={`--d:${i + j}`}
+          tabindex="0"
+          role="img"
+          data-cm-cell
+          data-i={i}
+          data-j={j}
+          data-true-city={cityShort[i]}
+          data-pred-city={cityShort[j]}
+          data-count={d.count}
+          data-total={d.total}
+          data-pct={d.pct}
+          aria-label={`True ${cityShort[i]}, predicted ${cityShort[j]}: ${d.count} of ${d.total}, ${d.pct} percent`}
+        >
+          <rect
+            x={padL + j * cell} y={padT + i * cell} width={cell - 2} height={cell - 2} rx="2"
+            fill={fill(d.count)}
+            stroke={d.isDiagonal ? 'var(--cobalt-strong)' : 'var(--line)'}
+            stroke-width={d.isDiagonal ? 2 : 1}
+          >
+            <title>{`True ${cityShort[i]} → predicted ${cityShort[j]}: ${d.count} of ${d.total} (${d.pct}%)`}</title>
+          </rect>
+          {d.count > 0 && (
+            <text x={padL + j * cell + (cell - 2) / 2} y={padT + i * cell + (cell - 2) / 2}
+              text-anchor="middle" dominant-baseline="central" class="cm__cell mono tnum"
+              fill={inkOn(d.count)}>{d.count}</text>
+          )}
+        </g>
+      ))
+    )}
+  </svg>
+  <p class="cm__readout mono" data-cm-readout aria-live="polite">
+    Hover or focus a cell to read its exact count and share.
+  </p>
+</div>
+
+<style>
+  .cm__svg { width: 100%; height: auto; }
+  .cm__axis { font-size: 11px; fill: var(--muted); letter-spacing: 0.08em; }
+  .cm__col, .cm__row { font-size: 11.5px; fill: var(--ink); transition: fill 0.12s var(--ease); }
+  .cm__cell { font-size: 12px; font-weight: 500; }
+</style>

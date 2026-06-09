@@ -1,0 +1,58 @@
+---
+/* Accessible data equivalent for a chart. Collapsed behind a <details> so it
+   doesn't clutter the visual, but is fully available to assistive tech and
+   keyboard users. Slotted into Figure's "table" slot. */
+interface Props {
+  caption: string;
+  columns: string[];
+  rows: (string | number)[][];
+  /** Column index (0-based) to render in mono tabular (numbers). */
+  numCols?: number[];
+}
+const { caption, columns, rows, numCols = [] } = Astro.props;
+---
+
+<details class="dt">
+  <summary class="dt__summary mono">Data table</summary>
+  <div class="dt__scroll">
+    <table class="dt__table">
+      <caption class="visually-hidden">{caption}</caption>
+      <thead>
+        <tr>{columns.map((c) => <th scope="col">{c}</th>)}</tr>
+      </thead>
+      <tbody>
+        {
+          rows.map((r) => (
+            <tr>
+              {r.map((cell, i) =>
+                i === 0 ? (
+                  <th scope="row">{cell}</th>
+                ) : (
+                  <td class:list={[{ 'mono tnum': numCols.includes(i) }]}>{cell}</td>
+                )
+              )}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</details>
+
+<style>
+  .dt { margin-top: var(--space-4); border-top: 1px solid var(--line); padding-top: 0.6rem; }
+  .dt__summary {
+    cursor: pointer; font-size: var(--step--2); color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase; width: max-content;
+  }
+  .dt__summary:hover { color: var(--cobalt-ink); }
+  .dt__scroll { overflow-x: auto; margin-top: 0.7rem; }
+  .dt__table { border-collapse: collapse; width: 100%; font-size: var(--step--1); }
+  .dt__table th, .dt__table td {
+    text-align: left; padding: 0.4rem 0.8rem 0.4rem 0;
+    border-bottom: 1px solid var(--line); white-space: nowrap;
+  }
+  .dt__table thead th { color: var(--muted); font-weight: 500; font-size: var(--step--2); text-transform: uppercase; letter-spacing: 0.06em; }
+  .dt__table tbody th { font-weight: 500; color: var(--ink-strong); }
+  .dt__table td { color: var(--ink); }
+</style>
