@@ -20,3 +20,7 @@ npm-debug.log*
 # vendored agent skills (kept local; pinned in skills-lock.json)
 .agents/skills/
 .claude/skills/
+
+# local-only source material (referenced files are copied into references/)
+author_info/
+proj_info/

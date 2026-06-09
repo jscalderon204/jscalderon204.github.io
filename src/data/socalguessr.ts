@@ -1,8 +1,9 @@
 /* SoCalGuessr data, derived at build time from the AUTHORITATIVE source files
-   in proj_info/. Importing the JSON directly means every published figure is
-   literally read from metrics.json / history.json, not transcribed. */
-import metrics from '../../proj_info/SoCalGuessr/metrics.json';
-import history from '../../proj_info/SoCalGuessr/history.json';
+   committed under references/ (copied from the local-only proj_info/). Importing
+   the JSON directly means every published figure is literally read from
+   metrics.json / history.json, not transcribed. */
+import metrics from '../../references/SoCalGuessr/metrics.json';
+import history from '../../references/SoCalGuessr/history.json';
 
 const CITY_LABELS: Record<string, string> = {
   Anaheim: 'Anaheim',
